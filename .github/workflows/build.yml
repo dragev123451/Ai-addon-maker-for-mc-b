@@ -13,24 +13,32 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: Force Disable Code Signing
-        working-directory: AddonAI
+      - name: Extract Zip File
         run: |
+          # Unzip your source code file into the workspace
+          unzip "AddonAI-v1-iOS-Xcode 2.zip"
+
+      - name: Locate and Build Project
+        run: |
+          # Dynamically find where the .xcodeproj file was extracted
+          PROJ_PATH=$(find . -name "AddonAI.xcodeproj" -print -quit)
+          
+          echo "Found project at: $PROJ_PATH"
+          
           mkdir -p Payload
+          
           xcodebuild build \
-            -project AddonAI.xcodeproj \
+            -project "$PROJ_PATH" \
             -scheme AddonAI \
             -sdk iphoneos \
             -configuration Release \
             CODE_SIGNING_ALLOWED=NO \
             CODE_SIGNING_REQUIRED=NO \
-            CONFIGURATION_BUILD_DIR=$(pwd)/build
-
-      - name: Package Payload
-        working-directory: AddonAI
-        run: |
-          mv build/AddonAI.app Payload/
-          zip -r ../AddonAI.ipa Payload/
+            CONFIGURATION_BUILD_DIR="$(pwd)/build"
+            
+          # Package it into the final IPA format
+          mv "$(pwd)/build/AddonAI.app" Payload/
+          zip -r AddonAI.ipa Payload/
 
       - name: Upload IPA Artifact
         uses: actions/upload-artifact@v4
